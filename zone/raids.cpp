@@ -460,6 +460,37 @@ int32 Raid::GetTotalRaidDamage(Mob* other)
 	}
 	return total;
 }
+//new raid heal code
+void Raid::HealGroup(uint32 heal_amt, Mob* caster, uint32 gid)
+{
+	if (!caster)
+		return;
+
+	int numMem = 0;
+	unsigned int gi = 0;
+	for(; gi < MAX_RAID_MEMBERS; gi++)
+	{
+		if(members[gi].member){
+			if(members[gi].GroupNumber == gid)
+			{
+				numMem += 1;
+			}
+		}
+	}
+
+	heal_amt /= numMem;
+	for(gi = 0; gi < MAX_RAID_MEMBERS; gi++)
+	{
+		if(members[gi].member){
+			if(members[gi].GroupNumber == gid)
+			{
+				members[gi].member->SetHP(members[gi].member->GetHP() + heal_amt);
+				members[gi].member->SendHPUpdate();
+			}
+		}
+	}
+}
+
 
 void Raid::BalanceHP(sint32 penalty, int32 gid)
 {
@@ -490,6 +521,43 @@ void Raid::BalanceHP(sint32 penalty, int32 gid)
 				else{
 					members[gi].member->SetHP(members[gi].member->GetMaxHP() - dmgtaken);
 					members[gi].member->SendHPUpdate();
+				}
+			}
+		}
+	}
+}
+//new raid mana code
+void Raid::BalanceMana(int32 penalty, uint32 gid)
+{
+	int manataken = 0, numMem = 0;
+	int gi = 0;
+	for(; gi < MAX_RAID_MEMBERS; gi++)
+	{
+		if(members[gi].member){
+			if(members[gi].GroupNumber == gid)
+			{
+				manataken += (members[gi].member->GetMaxMana() - members[gi].member->GetMana());
+				numMem += 1;
+			}
+		}
+	}
+
+	manataken += manataken * penalty / 100;
+	manataken /= numMem;
+	for(gi = 0; gi < MAX_RAID_MEMBERS; gi++)
+	{
+		if(members[gi].member){
+			if(members[gi].GroupNumber == gid)
+			{
+				if((members[gi].member->GetMaxMana() - manataken) < 1){ 
+					members[gi].member->SetMana(1);		
+					if (members[gi].member->IsClient())		
+						members[gi].member->CastToClient()->SendManaUpdate();	 
+				}
+				else{
+					members[gi].member->SetMana(members[gi].member->GetMaxMana() - manataken);
+					if (members[gi].member->IsClient())		
+						members[gi].member->CastToClient()->SendManaUpdate();
 				}
 			}
 		}

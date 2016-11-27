@@ -2248,6 +2248,8 @@ int64 Client::GetAllMoney() {
 }
 
 bool Client::CheckIncreaseSkill(SkillType skillid, Mob *against_who, int chancemodi) {
+	if (IsDead())
+		return false;
 	if (IsAIControlled()) // no skillups while chamred =p
 		return false;
 	if (skillid > HIGHEST_SKILL)
@@ -2258,7 +2260,7 @@ bool Client::CheckIncreaseSkill(SkillType skillid, Mob *against_who, int chancem
 	if(against_who)
 	{
 		if(against_who->SpecAttacks[IMMUNE_AGGRO] || against_who->IsClient() || 
-			GetLevelCon(against_who->GetLevel()) == CON_GREEN)
+			GetLevelCon(against_who->GetLevel()) == CON_GREEN || against_who->IsCorpse()) //added IsCorpse to prevent skill increase while attacking a corpse - Kegz @ EpicEmu.com
 		{
 				return false;
 		}
